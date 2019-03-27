@@ -1,3 +1,8 @@
+extern crate jemallocator;
+
+#[global_allocator]
+static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
+
 use json_benchmark::*;
 
 use std::fs::File;
@@ -128,6 +133,16 @@ fn main() {
         stringify_struct: serde_json::to_writer,
     }
 
+    #[cfg(feature = "lib-simdjson")]
+    bench! {
+        name: "simdjson",
+        dom: serde_json::Value,
+        parse_dom: simdjson_parse_dom,
+        stringify_dom: serde_json::to_writer,
+        //parse_struct: simdjson_parse_struct,
+        //stringify_struct: serde_json::to_writer,
+    }
+
     #[cfg(feature = "lib-json-rust")]
     bench! {
         name: "json-rust",
@@ -223,4 +238,24 @@ where
     let mut writer = adapter::IoWriteAsFmtWrite::new(writer);
     let mut encoder = rustc_serialize::json::Encoder::new(&mut writer);
     value.encode(&mut encoder)
+}
+
+
+#[cfg(all(
+    feature = "lib-simdjson",
+    any(feature = "parse-dom", feature = "stringify-dom")
+))]
+fn simdjson_parse_dom(bytes: &[u8]) -> Result<serde_json::Value, simdjson::DeserializerError> {
+    simdjson::from_slice(bytes)
+}
+
+#[cfg(all(
+    feature = "lib-simdjson",
+    any(feature = "parse-struct", feature = "stringify-struct")
+))]
+fn simdjson_parse_struct<'de, T>(bytes: &'de [u8]) -> Result<T, simdjson::DeserializerError>
+where
+    T: serde::Deserialize<'de>,
+{
+    simdjson::from_slice(bytes)
 }
