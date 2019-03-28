@@ -240,20 +240,21 @@ where
     value.encode(&mut encoder)
 }
 
-
 #[cfg(all(
     feature = "lib-simdjson",
     any(feature = "parse-dom", feature = "stringify-dom")
 ))]
-fn simdjson_parse_dom(bytes: &[u8]) -> Result<serde_json::Value, simdjson::DeserializerError> {
-    simdjson::from_slice(bytes)
+fn simdjson_parse_dom(bytes: &[u8]) -> Result<serde_json::Value, simdjson::Error> {
+    let mut v = bytes.to_vec();
+
+    simdjson::from_slice( &mut v)
 }
 
 #[cfg(all(
     feature = "lib-simdjson",
     any(feature = "parse-struct", feature = "stringify-struct")
 ))]
-fn simdjson_parse_struct<'de, T>(bytes: &'de [u8]) -> Result<T, simdjson::DeserializerError>
+fn simdjson_parse_struct<'de, T>(bytes: &'de [u8]) -> Result<T, simdjson::Error>
 where
     T: serde::Deserialize<'de>,
 {
