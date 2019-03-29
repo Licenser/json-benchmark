@@ -7,6 +7,7 @@ use json_benchmark::*;
 
 use std::fs::File;
 use std::io::{self, Read, Write};
+use std::iter;
 
 macro_rules! bench {
     {
@@ -63,13 +64,15 @@ macro_rules! bench_file {
         };
 
         #[cfg(feature = "parse-dom")]
-        {
-            let dur = timer::bench(num_trials, || {
-                let parsed: $dom = $parse_dom(&contents).unwrap();
+        {{
+            let mut data: Vec<Vec<u8>> = iter::repeat(contents.clone()).take(num_trials).collect();
+            let dur = timer::bench(num_trials,  move || {
+                let mut d = data.pop().unwrap();
+                let parsed: $dom = $parse_dom(&mut d).unwrap();
                 parsed
             });
             print!("{:6} MB/s", throughput(dur, contents.len()));
-            io::stdout().flush().unwrap();
+            io::stdout().flush().unwrap();}
         }
         #[cfg(not(feature = "parse-dom"))]
         print!("          ");
@@ -77,7 +80,7 @@ macro_rules! bench_file {
         #[cfg(feature = "stringify-dom")]
         {
             let len = contents.len();
-            let dom: $dom = $parse_dom(&contents).unwrap();
+            let dom: $dom = $parse_dom(&mut contents.clone()).unwrap();
             let dur = timer::bench_with_buf(num_trials, len, |out| {
                 $stringify_dom(out, &dom).unwrap()
             });
@@ -92,8 +95,9 @@ macro_rules! bench_file {
         $(
             #[cfg(feature = "parse-struct")]
             {
+                let mut data: Vec<Vec<u8>> = iter::repeat(contents.clone()).take(num_trials).collect();
                 let dur = timer::bench(num_trials, || {
-                    let parsed: $structure = $parse_struct(&contents).unwrap();
+                    let parsed: $structure = $parse_struct(&mut data.pop().unwrap()).unwrap();
                     parsed
                 });
                 print!("{:6} MB/s", throughput(dur, contents.len()));
@@ -105,7 +109,7 @@ macro_rules! bench_file {
             #[cfg(feature = "stringify-struct")]
             {
                 let len = contents.len();
-                let parsed: $structure = $parse_struct(&contents).unwrap();
+                let parsed: $structure = $parse_struct(&mut contents.clone()).unwrap();
                 let dur = timer::bench_with_buf(num_trials, len, |out| {
                     $stringify_struct(out, &parsed).unwrap()
                 });
@@ -139,8 +143,8 @@ fn main() {
         dom: serde_json::Value,
         parse_dom: simdjson_parse_dom,
         stringify_dom: serde_json::to_writer,
-        //parse_struct: simdjson_parse_struct,
-        //stringify_struct: serde_json::to_writer,
+        parse_struct: simdjson_parse_struct,
+        stringify_struct: serde_json::to_writer,
     }
 
     #[cfg(feature = "lib-json-rust")]
@@ -166,7 +170,7 @@ fn main() {
     feature = "lib-serde",
     any(feature = "parse-dom", feature = "stringify-dom")
 ))]
-fn serde_json_parse_dom(bytes: &[u8]) -> serde_json::Result<serde_json::Value> {
+fn serde_json_parse_dom(bytes: &mut [u8]) -> serde_json::Result<serde_json::Value> {
     use std::str;
     let s = str::from_utf8(bytes).unwrap();
     serde_json::from_str(s)
@@ -189,7 +193,7 @@ where
     feature = "lib-json-rust",
     any(feature = "parse-dom", feature = "stringify-dom")
 ))]
-fn json_rust_parse_dom(bytes: &[u8]) -> json::Result<json::JsonValue> {
+fn json_rust_parse_dom(bytes: &mut [u8]) -> json::Result<json::JsonValue> {
     use std::str;
     let s = str::from_utf8(bytes).unwrap();
     json::parse(&s)
@@ -205,7 +209,7 @@ fn json_rust_stringify_dom<W: io::Write>(write: &mut W, dom: &json::JsonValue) -
     any(feature = "parse-dom", feature = "stringify-dom")
 ))]
 fn rustc_serialize_parse_dom(
-    mut bytes: &[u8],
+    mut bytes: & [u8],
 ) -> Result<rustc_serialize::json::Json, rustc_serialize::json::BuilderError> {
     rustc_serialize::json::Json::from_reader(&mut bytes)
 }
@@ -214,7 +218,7 @@ fn rustc_serialize_parse_dom(
     feature = "lib-rustc-serialize",
     any(feature = "parse-struct", feature = "stringify-struct")
 ))]
-fn rustc_serialize_parse_struct<T>(bytes: &[u8]) -> rustc_serialize::json::DecodeResult<T>
+fn rustc_serialize_parse_struct<T>(bytes: &mut [u8]) -> rustc_serialize::json::DecodeResult<T>
 where
     T: rustc_serialize::Decodable,
 {
@@ -244,17 +248,15 @@ where
     feature = "lib-simdjson",
     any(feature = "parse-dom", feature = "stringify-dom")
 ))]
-fn simdjson_parse_dom(bytes: &[u8]) -> Result<serde_json::Value, simdjson::Error> {
-    let mut v = bytes.to_vec();
-
-    simdjson::from_slice( &mut v)
+fn simdjson_parse_dom(bytes: &mut [u8]) -> Result<serde_json::Value, simdjson::Error> {
+    simdjson::from_slice(bytes)
 }
 
 #[cfg(all(
     feature = "lib-simdjson",
     any(feature = "parse-struct", feature = "stringify-struct")
 ))]
-fn simdjson_parse_struct<'de, T>(bytes: &'de [u8]) -> Result<T, simdjson::Error>
+fn simdjson_parse_struct<'de, T>(bytes: &'de mut [u8]) -> Result<T, simdjson::Error>
 where
     T: serde::Deserialize<'de>,
 {
