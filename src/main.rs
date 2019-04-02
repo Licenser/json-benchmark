@@ -58,7 +58,7 @@ macro_rules! bench_file {
             stringify_struct: $stringify_struct:expr,
         )*
     } => {
-        let num_trials = num_trials().unwrap_or(256);
+        let num_trials = num_trials().unwrap_or(512);
 
         print!("{:22}", $path);
         io::stdout().flush().unwrap();
