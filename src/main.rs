@@ -37,6 +37,12 @@ macro_rules! bench {
             structure: twitter::Twitter,
             $($args)*
         }
+        #[cfg(feature = "file-log")]
+        bench_file! {
+            path: "data/log.json",
+            structure: twitter::Twitter,
+            $($args)*
+        }
     }
 }
 
@@ -69,7 +75,9 @@ macro_rules! bench_file {
             let dur = timer::bench(num_trials,  move || {
                 let mut d = data.pop().unwrap();
                 let parsed: $dom = $parse_dom(&mut d).unwrap();
-                parsed
+                //_parsed;
+                ()
+
             });
             print!("{:6} MB/s", throughput(dur, contents.len()));
             io::stdout().flush().unwrap();}
@@ -144,6 +152,16 @@ fn main() {
         parse_dom: simdjson_parse_dom,
         stringify_dom: serde_json::to_writer,
         parse_struct: simdjson_parse_struct,
+        stringify_struct: serde_json::to_writer,
+    }
+
+    #[cfg(feature = "lib-simdjson-value")]
+    bench! {
+        name: "simdjson-value",
+        dom: simdjson::Value,
+        parse_dom: simdjson_parse_dom_value,
+        stringify_dom: serde_json::to_writer,
+        parse_struct: simdjson_parse_struct_value,
         stringify_struct: serde_json::to_writer,
     }
 
@@ -257,6 +275,25 @@ fn simdjson_parse_dom(bytes: &mut [u8]) -> Result<serde_json::Value, simdjson::E
     any(feature = "parse-struct", feature = "stringify-struct")
 ))]
 fn simdjson_parse_struct<'de, T>(bytes: &'de mut [u8]) -> Result<T, simdjson::Error>
+where
+    T: serde::Deserialize<'de>,
+{
+    simdjson::from_slice(bytes)
+}
+
+#[cfg(all(
+    feature = "lib-simdjson-value",
+    any(feature = "parse-dom", feature = "stringify-dom")
+))]
+fn simdjson_parse_dom_value(bytes: &mut [u8]) -> Result<simdjson::Value, simdjson::Error> {
+    simdjson::to_value(bytes)
+}
+
+#[cfg(all(
+    feature = "lib-simdjson-value",
+    any(feature = "parse-struct", feature = "stringify-struct")
+))]
+fn simdjson_parse_struct_value<'de, T>(bytes: &'de mut [u8]) -> Result<T, simdjson::Error>
 where
     T: serde::Deserialize<'de>,
 {
