@@ -43,6 +43,12 @@ macro_rules! bench {
             structure: twitter::Twitter,
             $($args)*
         }
+        #[cfg(feature = "file-apache-builds")]
+        bench_file! {
+            path: "data/apache_builds.json",
+            structure: twitter::Twitter,
+            $($args)*
+        }
     }
 }
 
