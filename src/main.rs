@@ -237,7 +237,7 @@ fn json_rust_stringify_dom<W: io::Write>(write: &mut W, dom: &json::JsonValue) -
     any(feature = "parse-dom", feature = "stringify-dom")
 ))]
 fn rustc_serialize_parse_dom(
-    mut bytes: & [u8],
+    mut bytes: &[u8],
 ) -> Result<rustc_serialize::json::Json, rustc_serialize::json::BuilderError> {
     rustc_serialize::json::Json::from_reader(&mut bytes)
 }
@@ -277,7 +277,7 @@ where
     any(feature = "parse-dom", feature = "stringify-dom")
 ))]
 fn simdjson_parse_dom(bytes: &mut [u8]) -> Result<serde_json::Value, simdjson::Error> {
-    simdjson::from_slice(bytes)
+    simdjson::serde::from_slice(bytes)
 }
 
 #[cfg(all(
@@ -288,7 +288,7 @@ fn simdjson_parse_struct<'de, T>(bytes: &'de mut [u8]) -> Result<T, simdjson::Er
 where
     T: serde::Deserialize<'de>,
 {
-    simdjson::from_slice(bytes)
+    simdjson::serde::from_slice(bytes)
 }
 
 #[cfg(all(
@@ -307,5 +307,5 @@ fn simdjson_parse_struct_value<'de, T>(bytes: &'de mut [u8]) -> Result<T, simdjs
 where
     T: serde::Deserialize<'de>,
 {
-    simdjson::from_slice(bytes)
+    simdjson::serde::from_slice(bytes)
 }
