@@ -64,6 +64,10 @@ macro_rules! bench_file {
             stringify_struct: $stringify_struct:expr,
         )*
     } => {
+        #[cfg(all(feature = "file-log", not(feature = "all-files")))]
+        let num_trials = num_trials().unwrap_or(1024000);
+
+        #[cfg(not(all(feature = "file-log", not(feature = "all-files"))))]
         let num_trials = num_trials().unwrap_or(512);
 
         print!("{:22}", $path);
