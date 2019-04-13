@@ -84,7 +84,7 @@ macro_rules! bench_file {
             let mut data: Vec<Vec<u8>> = iter::repeat(contents.clone()).take(num_trials).collect();
             let dur = timer::bench(num_trials,  move || {
                 let mut d = data.pop().unwrap();
-                let parsed: $dom = $parse_dom(&mut d).unwrap();
+                let _parsed: $dom = $parse_dom(&mut d).unwrap();
                 //_parsed;
                 ()
 
@@ -168,7 +168,7 @@ fn main() {
     #[cfg(feature = "lib-simdjson-value")]
     bench! {
         name: "simdjson-value",
-        dom: simdjson::Value,
+        dom: simdjson::BorrowedValue,
         parse_dom: simdjson_parse_dom_value,
         stringify_dom: serde_json::to_writer,
         parse_struct: simdjson_parse_struct_value,
@@ -295,8 +295,8 @@ where
     feature = "lib-simdjson-value",
     any(feature = "parse-dom", feature = "stringify-dom")
 ))]
-fn simdjson_parse_dom_value(bytes: &mut [u8]) -> Result<simdjson::Value, simdjson::Error> {
-    simdjson::to_value(bytes)
+fn simdjson_parse_dom_value(bytes: &mut [u8]) -> Result<simdjson::BorrowedValue, simdjson::Error> {
+    simdjson::to_borrowed_value(bytes)
 }
 
 #[cfg(all(
