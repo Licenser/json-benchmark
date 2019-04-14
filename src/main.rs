@@ -117,8 +117,9 @@ macro_rules! bench_file {
             {
                 let mut data: Vec<Vec<u8>> = iter::repeat(contents.clone()).take(num_trials).collect();
                 let dur = timer::bench(num_trials, || {
-                    let parsed: $structure = $parse_struct(&mut data.pop().unwrap()).unwrap();
-                    parsed
+                    let mut d = data.pop().unwrap();
+                    let _parsed: $structure = $parse_struct(&mut d).unwrap();
+                    //_parsed;
                 });
                 print!("{:6} MB/s", throughput(dur, contents.len()));
                 io::stdout().flush().unwrap();
