@@ -40,15 +40,17 @@ macro_rules! bench {
         #[cfg(feature = "file-log")]
         bench_file! {
             path: "data/log.json",
-            structure: twitter::Twitter,
+            structure: log::Log,
             $($args)*
         }
+        /*
         #[cfg(feature = "file-apache-builds")]
         bench_file! {
             path: "data/apache_builds.json",
             structure: twitter::Twitter,
             $($args)*
         }
+        */
     }
 }
 
