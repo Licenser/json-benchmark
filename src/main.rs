@@ -70,7 +70,7 @@ macro_rules! bench_file {
         let num_trials = num_trials().unwrap_or(1024000);
 
         #[cfg(not(all(feature = "file-log", not(feature = "all-files"))))]
-        let num_trials = num_trials().unwrap_or(512);
+        let num_trials = num_trials().unwrap_or(1024);
 
         print!("{:22}", $path);
         io::stdout().flush().unwrap();
@@ -171,7 +171,7 @@ fn main() {
     #[cfg(feature = "lib-simdjson-value")]
     bench! {
         name: "simdjson-value",
-        dom: simdjson::BorrowedValue,
+        dom: simd_json::BorrowedValue,
         parse_dom: simdjson_parse_dom_value,
         stringify_dom: serde_json::to_writer,
         parse_struct: simdjson_parse_struct_value,
@@ -279,36 +279,36 @@ where
     feature = "lib-simdjson",
     any(feature = "parse-dom", feature = "stringify-dom")
 ))]
-fn simdjson_parse_dom(bytes: &mut [u8]) -> Result<serde_json::Value, simdjson::Error> {
-    simdjson::serde::from_slice(bytes)
+fn simdjson_parse_dom(bytes: &mut [u8]) -> Result<serde_json::Value, simd_json::Error> {
+    simd_json::serde::from_slice(bytes)
 }
 
 #[cfg(all(
     feature = "lib-simdjson",
     any(feature = "parse-struct", feature = "stringify-struct")
 ))]
-fn simdjson_parse_struct<'de, T>(bytes: &'de mut [u8]) -> Result<T, simdjson::Error>
+fn simdjson_parse_struct<'de, T>(bytes: &'de mut [u8]) -> Result<T, simd_json::Error>
 where
     T: serde::Deserialize<'de>,
 {
-    simdjson::serde::from_slice(bytes)
+    simd_json::serde::from_slice(bytes)
 }
 
 #[cfg(all(
     feature = "lib-simdjson-value",
     any(feature = "parse-dom", feature = "stringify-dom")
 ))]
-fn simdjson_parse_dom_value(bytes: &mut [u8]) -> Result<simdjson::BorrowedValue, simdjson::Error> {
-    simdjson::to_borrowed_value(bytes)
+fn simdjson_parse_dom_value(bytes: &mut [u8]) -> Result<simd_json::BorrowedValue, simd_json::Error> {
+    simd_json::to_borrowed_value(bytes)
 }
 
 #[cfg(all(
     feature = "lib-simdjson-value",
     any(feature = "parse-struct", feature = "stringify-struct")
 ))]
-fn simdjson_parse_struct_value<'de, T>(bytes: &'de mut [u8]) -> Result<T, simdjson::Error>
+fn simdjson_parse_struct_value<'de, T>(bytes: &'de mut [u8]) -> Result<T, simd_json::Error>
 where
     T: serde::Deserialize<'de>,
 {
-    simdjson::serde::from_slice(bytes)
+    simd_json::serde::from_slice(bytes)
 }
