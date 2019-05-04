@@ -1,4 +1,4 @@
-#[cfg(feature = "lib-serde")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 enum_str!(Environment {
@@ -15,8 +15,8 @@ enum_str!(LogLevel {
     Debug("Debug"),
 });
 
-#[cfg_attr(feature = "lib-serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "lib-serde", serde(deny_unknown_fields))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 pub struct Log {
     jk_host: String,
     class_name: String,
@@ -26,16 +26,16 @@ pub struct Log {
     user_agent_device: String,
     slush: String,
     and_an_ip4: String,
-    #[cfg_attr(feature = "lib-serde", serde(rename = "@version"))]
+    #[cfg_attr(feature = "serde", serde(rename = "@version"))]
     version: String, // Could be u64? "1"
     error_url_path: String,
     logstash: String,
-    #[cfg_attr(feature = "lib-serde", serde(rename = "uuids->"))]
+    #[cfg_attr(feature = "serde", serde(rename = "uuids->"))]
     uuid: String,
     anotherfilename: String,
     environment: Environment,
     floatasstr: String, // Could be float "123.56",
-    #[cfg_attr(feature = "lib-serde", serde(rename = "there_string:"))]
+    #[cfg_attr(feature = "serde", serde(rename = "there_string:"))]
     there_string: String,
     arry: Vec<String>,
     message: String,
@@ -49,18 +49,18 @@ pub struct Log {
     error_url: String,
     short_message: String,
     action: String,
-    #[cfg_attr(feature = "lib-serde", serde(rename = "cakes!"))]
+    #[cfg_attr(feature = "serde", serde(rename = "cakes!"))]
     cakes: String,
-    #[cfg_attr(feature = "lib-serde", serde(rename = "type"))]
+    #[cfg_attr(feature = "serde", serde(rename = "type"))]
     log_type: String,
     log_level: LogLevel,
     too_many_ho: String,
     controller: String,
     key_keykeykey: String,
-    #[cfg_attr(feature = "lib-serde", serde(rename = "a proper_timestamp_ja"))]
+    #[cfg_attr(feature = "serde", serde(rename = "a proper_timestamp_ja"))]
     proper_timestamp: String, //Coudl be date? "2018-07-23T12:19:16-04:00",
     and_yet_another: String,
-    #[cfg_attr(feature = "lib-serde", serde(rename = "@timestamp"))]
+    #[cfg_attr(feature = "serde", serde(rename = "@timestamp"))]
     timestamp: String, //Could be date3 "2018-07-23T16:19:16.821Z",
     level: u8,
 }

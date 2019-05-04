@@ -1,4 +1,4 @@
-#[cfg(feature = "lib-serde")]
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
 enum_str!(Environment {
@@ -15,8 +15,8 @@ enum_str!(LogLevel {
     Debug("Debug"),
 });
 
-#[cfg_attr(feature = "lib-serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "lib-serde", serde(deny_unknown_fields))]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(deny_unknown_fields))]
 pub struct Log<'a> {
     jk_host: &'a str,
     class_name: String, //&'a str,
