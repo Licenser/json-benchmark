@@ -115,7 +115,7 @@ macro_rules! bench_file {
                     $stringify_struct(out, &parsed).unwrap()
                 });
                 let mut serialized = Vec::new();
-                $stringify_dom(&mut serialized, &parsed).unwrap();
+                $stringify_struct(&mut serialized, &parsed).unwrap();
                 print!("{:6} MB/s", throughput(dur, serialized.len()));
                 io::stdout().flush().unwrap();
             }
@@ -161,7 +161,7 @@ fn main() {
         name: "serde_json",
         dom: simd_json::OwnedValue,
         parse_dom: simd_json_parse_dom,
-        stringify_dom: serde_json::to_writer,
+        stringify_dom: simd_json_stringify_dom,
         parse_struct: simd_json_parse_struct,
         stringify_struct: serde_json::to_writer,
         }
@@ -271,4 +271,9 @@ where
     T: serde::Deserialize<'de>,
 {
     simd_json::serde::from_slice(bytes)
+}
+
+#[cfg(all(feature = "lib-simd-json", feature = "stringify-dom"))]
+fn simd_json_stringify_dom<W: io::Write>(write: &mut W, dom: &simd_json::OwnedValue) -> io::Result<()> {
+    dom.write(write)
 }
