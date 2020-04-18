@@ -55,6 +55,26 @@ impl Serialize for Color {
     }
 }
 
+#[cfg(feature = "lib-simd-json")]
+impl simd_json_derive::Serialize for Color {
+    fn json_write<W>(&self, writer: &mut W) -> std::io::Result<()>
+    where
+        W: std::io::Write,
+    {
+        let mut buf: [u8; 6] = unsafe { ::std::mem::uninitialized() };
+        self.as_str(&mut buf).json_write(writer)
+    }
+    // fn write_content<W>(&self, writer: &mut W) -> std::io::Result<()>
+    // where W: std::io::Write
+    // {
+    //     let mut buf: [u8; 6] = unsafe { ::std::mem::uninitialized() };
+    //     self.as_str(&mut buf).json_write(writer)
+    // }
+
+    // fn static_start() -> &'static [u8] { b"" }
+    // fn static_end() -> &'static [u8] { b"" }
+}
+
 #[cfg(feature = "lib-serde")]
 impl<'de> Deserialize<'de> for Color {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>

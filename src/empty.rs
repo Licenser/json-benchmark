@@ -1,14 +1,14 @@
 #[cfg(feature = "lib-rustc-serialize")]
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
-#[cfg(feature = "lib-serde")]
+#[cfg(any(feature = "lib-serde", feature = "simd-json"))]
 use serde::{de, Deserialize, Deserializer, Serialize, Serializer};
-#[cfg(feature = "lib-serde")]
+#[cfg(any(feature = "lib-serde", feature = "simd-json"))]
 use std::fmt;
 
 #[derive(Clone, Copy)]
 pub struct Array;
 
-#[cfg(feature = "lib-serde")]
+#[cfg(any(feature = "lib-serde", feature = "simd-json"))]
 impl Serialize for Array {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -17,8 +17,25 @@ impl Serialize for Array {
         [(); 0].serialize(serializer)
     }
 }
+#[cfg(feature = "lib-simd-json")]
+impl simd_json_derive::Serialize for Array {
+    fn json_write<W>(&self, writer: &mut W) -> std::io::Result<()>
+    where
+        W: std::io::Write,
+    {
+        use std::io::Write;
+        writer.write_all(b"[]")
+    }
+    // fn write_content<W>(&self, writer: &mut W) -> std::io::Result<()>
+    // where W: std::io::Write
+    // {
+    //     Ok(())
+    // }
+    // fn static_start() -> &'static [u8] { b"[" }
+    // fn static_end() -> &'static [u8] { b"]" }
+}
 
-#[cfg(feature = "lib-serde")]
+#[cfg(any(feature = "lib-serde", feature = "simd-json"))]
 impl<'de> Deserialize<'de> for Array {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where

@@ -24,6 +24,23 @@ macro_rules! enum_str {
             }
         }
 
+        #[cfg(feature = "lib-simd-json")]
+        impl ::simd_json_derive::Serialize for $name {
+            fn json_write<W>(&self, writer: &mut W) -> std::io::Result<()>
+                where W: std::io::Write
+            {
+                self.as_str().json_write(writer)
+            }
+            // fn write_content<W>(&self, writer: &mut W) -> std::io::Result<()>
+            // where W: std::io::Write
+            // {
+            //     self.as_str().json_write(writer)
+            // }
+
+            // fn static_start() -> &'static [u8] { b"" }
+            // fn static_end() -> &'static [u8] { b"" }
+        }
+
         #[cfg(feature = "lib-serde")]
         impl<'de> ::serde::Deserialize<'de> for $name {
             fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>

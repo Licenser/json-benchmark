@@ -1,10 +1,13 @@
 // Since this is a benchmakr we should use an optiomal allocator
 // to not be slwoed down by allcoations but rather measure the
 // perofrmance of the code
-extern crate jemallocator;
+// extern crate jemallocator;
+//
+// #[global_allocator]
+// static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 #[global_allocator]
-static ALLOC: jemallocator::Jemalloc = jemallocator::Jemalloc;
+static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 use json_benchmark::*;
 
@@ -50,6 +53,7 @@ macro_rules! bench {
 
 macro_rules! bench_simd_json {
     {} => {
+        use simd_json::prelude::*;
         let name = format!(" simd_json ");
         println!("\n{:=^26} parse|stringify ===== parse|stringify ====", name);
 
@@ -73,6 +77,38 @@ macro_rules! bench_simd_json {
 
         #[cfg(feature = "file-log")]
         bench_file_simd_json! {
+            path: "data/log.json",
+            structure: log::Log,
+        }
+    }
+}
+
+#[cfg(feature = "lib-simd-json-tape")]
+macro_rules! bench_simd_json_tape {
+    {} => {
+        let name = format!(" simd_json_tape ");
+        println!("\n{:=^26} parse|stringify ===== parse|stringify ====", name);
+
+        #[cfg(feature = "file-canada")]
+        bench_file_simd_json_tape! {
+            path: "data/canada.json",
+            structure: canada::Canada,
+        }
+
+        #[cfg(feature = "file-citm-catalog")]
+        bench_file_simd_json_tape! {
+            path: "data/citm_catalog.json",
+            structure: citm_catalog::CitmCatalog,
+        }
+
+        #[cfg(feature = "file-twitter")]
+        bench_file_simd_json_tape! {
+            path: "data/twitter.json",
+            structure: twitter::Twitter,
+        }
+
+        #[cfg(feature = "file-log")]
+        bench_file_simd_json_tape! {
             path: "data/log.json",
             structure: log::Log,
         }
@@ -119,6 +155,7 @@ macro_rules! bench_file {
             let len = contents.len();
             let dom: $dom = $parse_dom(&contents).unwrap();
             let dur = timer::bench_with_buf(num_trials, len, |out| {
+                out.clear();
                 $stringify_dom(out, &dom).unwrap()
             });
             let mut serialized = Vec::new();
@@ -147,6 +184,7 @@ macro_rules! bench_file {
                 let len = contents.len();
                 let parsed: $structure = $parse_struct(&contents).unwrap();
                 let dur = timer::bench_with_buf(num_trials, len, |out| {
+                    out.clear();
                     $stringify_struct(out, &parsed).unwrap()
                 });
                 let mut serialized = Vec::new();
@@ -201,7 +239,7 @@ macro_rules! bench_file_simd_json {
             let len = contents.len();
             let mut data = contents.clone();
             let dom = simd_json_parse_dom(&mut data).unwrap();
-            let dur = timer::bench_with_buf(num_trials, len, |out| {
+            let dur = timer::bench_with_buf(num_trials, len*2, |out| {
                 dom.write(out).unwrap()
             });
             let mut serialized = Vec::new();
@@ -234,17 +272,63 @@ macro_rules! bench_file_simd_json {
 
         #[cfg(feature = "stringify-struct")]
         {
+            use simd_json_derive::Serialize;
             let len = contents.len();
             let mut data = contents.clone();
             let parsed: $structure = simd_json_parse_struct(&mut data).unwrap();
             let dur = timer::bench_with_buf(num_trials, len, |out| {
-                serde_json::to_writer(out, &parsed).unwrap()
+                parsed.json_write(out);
             });
             let mut serialized = Vec::new();
-            serde_json::to_writer(&mut serialized, &parsed).unwrap();
+            parsed.json_write(&mut serialized);
+
             print!("{:6} MB/s", throughput(dur, serialized.len()));
             io::stdout().flush().unwrap();
         }
+
+        println!();
+    }
+}
+
+macro_rules! bench_file_simd_json_tape {
+    {
+        path: $path:expr,
+        structure: $structure:ty,
+    } => {
+        let num_trials = num_trials().unwrap_or(256);
+
+        print!("{:22}", $path);
+        io::stdout().flush().unwrap();
+
+        let contents = {
+            let mut vec = Vec::new();
+            File::open($path).unwrap().read_to_end(&mut vec).unwrap();
+            vec
+        };
+
+
+        #[cfg(feature = "parse-dom")]
+        {
+            use timer::Benchmark;
+            let mut benchmark = Benchmark::new();
+            let mut data = contents.clone();
+            for _ in 0..num_trials {
+                data.as_mut_slice().clone_from_slice(contents.as_slice());
+                let mut timer = benchmark.start();
+                let parsed = simd_json_parse_tape(&mut data);
+                timer.stop();
+                parsed.unwrap();
+            }
+            let dur = benchmark.min_elapsed();
+            print!("{:6} MB/s", throughput(dur, contents.len()));
+            io::stdout().flush().unwrap();
+        }
+        #[cfg(not(feature = "parse-dom"))]
+        print!("          ");
+
+        print!("          ");
+
+        print!("          ");
 
         println!();
     }
@@ -292,7 +376,9 @@ fn main() {
     // with slightly different characteristics.
 
     #[cfg(feature = "lib-simd-json")]
-    bench_simd_json! {}
+    bench_simd_json! {};
+    #[cfg(feature = "lib-simd-json-tape")]
+    bench_simd_json_tape! {};
 }
 
 #[cfg(all(
@@ -389,6 +475,14 @@ fn serde_json_parse_dom(bytes: &[u8]) -> serde_json::Result<serde_json::Value> {
 ))]
 fn simd_json_parse_dom(bytes: &mut [u8]) -> simd_json::Result<simd_json::BorrowedValue> {
     simd_json::to_borrowed_value(bytes)
+}
+
+#[cfg(all(
+    feature = "lib-simd-json-tape",
+    any(feature = "parse-dom", feature = "stringify-dom")
+))]
+fn simd_json_parse_tape(bytes: &mut [u8]) -> simd_json::Result<Vec<simd_json::Node>> {
+    simd_json::to_tape(bytes)
 }
 
 #[cfg(all(

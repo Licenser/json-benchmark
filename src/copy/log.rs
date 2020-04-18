@@ -21,6 +21,7 @@ enum_str!(LogLevel {
     feature = "lib-rustc-serialize",
     derive(RustcEncodable, RustcDecodable)
 )]
+#[cfg_attr(feature = "lib-simd-json", derive(simd_json_derive::Serialize))]
 pub struct Log {
     jk_host: String,
     class_name: String,

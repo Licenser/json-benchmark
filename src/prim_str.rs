@@ -1,13 +1,13 @@
-#[cfg(feature = "lib-serde")]
+#[cfg(any(feature = "lib-serde", feature = "simd-json"))]
 use std::fmt;
 use std::fmt::Display;
 use std::str::FromStr;
 
 #[cfg(feature = "lib-rustc-serialize")]
 use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
-#[cfg(feature = "lib-serde")]
+#[cfg(any(feature = "lib-serde", feature = "simd-json"))]
 use serde::de::{self, Deserialize, Deserializer, Unexpected};
-#[cfg(feature = "lib-serde")]
+#[cfg(any(feature = "lib-serde", feature = "simd-json"))]
 use serde::ser::{Serialize, Serializer};
 
 #[derive(Clone, Copy, Ord, PartialOrd, Eq, PartialEq)]
@@ -15,7 +15,7 @@ pub struct PrimStr<T>(T)
 where
     T: Copy + Ord + Display + FromStr;
 
-#[cfg(feature = "lib-serde")]
+#[cfg(any(feature = "lib-serde", feature = "simd-json"))]
 impl<T> Serialize for PrimStr<T>
 where
     T: Copy + Ord + Display + FromStr,
@@ -28,7 +28,28 @@ where
     }
 }
 
-#[cfg(feature = "lib-serde")]
+#[cfg(feature = "lib-simd-json")]
+impl<T> simd_json_derive::Serialize for PrimStr<T>
+where
+    T: Copy + Ord + Display + FromStr,
+{
+    fn json_write<W>(&self, writer: &mut W) -> std::io::Result<()>
+    where
+        W: std::io::Write,
+    {
+        write!(writer, "{}", self.0)
+    }
+    // fn write_content<W>(&self, writer: &mut W) -> std::io::Result<()>
+    // where W: std::io::Write
+    // {
+    //     write!(writer, "{}", self.0)
+    // }
+
+    // fn static_start() -> &'static [u8] { b"" }
+    // fn static_end() -> &'static [u8] { b"" }
+}
+
+#[cfg(any(feature = "lib-serde", feature = "simd-json"))]
 impl<'de, T> Deserialize<'de> for PrimStr<T>
 where
     T: Copy + Ord + Display + FromStr,
